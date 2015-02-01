@@ -27,11 +27,12 @@ void Render(RasterBuffers* buffers)
     // Clear buffer
     //
 
-    DebugTimer_Tic("ClearBuffer");
+    DebugTimer_Tic("ClearBuffers");
 
-    memset(buffers->m_color, 0x7f, buffers->m_colorTotalBytes);
+    memset(buffers->m_color, 0x7f, buffers->m_colorBufferBytes);
+    memset(buffers->m_fragmentsTmpBuffer, 0, buffers->m_fragmentsTmpBufferBytes);
 
-    DebugTimer_TocAndPrint("ClearBuffer");
+    DebugTimer_TocAndPrint("ClearBuffers");
 
     //
     // Setup geometry (in window coordinates already)
@@ -42,8 +43,8 @@ void Render(RasterBuffers* buffers)
         { 0.8f, -0.8f, 0.0f },
         { -0.8f, -0.8f, 0.0f } };
 
-    const float wD2 = buffers->m_width / 2;
-    const float hD2 = buffers->m_height / 2;
+    const float wD2 = (float)buffers->m_width / 2;
+    const float hD2 = (float)buffers->m_height / 2;
 
     vec4 vertices[SizeOfArray(verticesViewport)];
     for (int i = 0; i < SizeOfArray(verticesViewport); ++i)
@@ -74,7 +75,11 @@ void Render(RasterBuffers* buffers)
 
     for (int i = 0; i < SizeOfArray(triangles); i += 3)
     {
-        RasterizeTriangle(vertexData, sizeof(vertexData), triangles, buffers);
+        TriangleInput input = {
+            vertexData, 
+            { triangles[i], triangles[i + 1], triangles[i + 2] } };
+
+        Rasterizer::RasterTriangle(buffers, input);
     }
 
     DebugTimer_TocAndPrint(__FUNCTION__);

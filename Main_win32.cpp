@@ -33,16 +33,35 @@ static void ResizeBitmap(int width, int height)
     g_app.m_bitmapInfo.bmiHeader.biBitCount = 32;
     g_app.m_bitmapInfo.bmiHeader.biCompression = BI_RGB;
 
+    //
+    // Destroy buffers
+    //
+
     if (g_app.m_buffers.m_color)
     {
         VirtualFree(g_app.m_buffers.m_color, 0, MEM_RELEASE);
     }
 
-    g_app.m_buffers.m_colorPixelBytes = 4;
-    g_bitmapBytes = g_app.m_buffers.m_colorPixelBytes * width * height;
-    g_app.m_buffers.m_color = (uint32_t*)VirtualAlloc(0, g_bitmapBytes, MEM_COMMIT, PAGE_READWRITE);
+    if (g_app.m_buffers.m_fragmentsTmpBuffer)
+    {
+        VirtualFree(g_app.m_buffers.m_fragmentsTmpBuffer, 0, MEM_RELEASE);
+    }
+
+    //
+    // Create new buffers
+    //
+
+    g_app.m_buffers.m_bytesPerPixel = 4;
+    g_app.m_buffers.m_colorBufferBytes = g_app.m_buffers.m_bytesPerPixel * width * height;
+    g_app.m_buffers.m_color = (uint32_t*)VirtualAlloc(
+        0, g_app.m_buffers.m_colorBufferBytes, MEM_COMMIT, PAGE_READWRITE);
+    g_bitmapBytes = g_app.m_buffers.m_colorBufferBytes;
+    
+    g_app.m_buffers.m_fragmentsTmpBufferBytes = sizeof(FragmentInput) * width * height;
+    g_app.m_buffers.m_fragmentsTmpBuffer = (FragmentInput*)VirtualAlloc(
+        0, g_app.m_buffers.m_fragmentsTmpBufferBytes, MEM_COMMIT, PAGE_READWRITE);
+    
     //g_app.m_buffers.m_depth = nullptr;
-    g_app.m_buffers.m_colorTotalBytes = g_bitmapBytes;
     g_app.m_buffers.m_width = width;
     g_app.m_buffers.m_height = height;
 

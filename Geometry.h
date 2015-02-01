@@ -8,7 +8,7 @@
 
 struct VertexData
 {
-    vec4 m_pos;
+    vec4 m_pos;  // window coordinates
     uint8_t m_color[4];
 };
 
