@@ -1,0 +1,29 @@
+- Software renderer matching GPU functional pipeline
+- Texture support
+- Blinn-Phong shading
+- Lighting
+- Back face culling
+
+ARTWORK REFERENCE: https://www.google.co.uk/search?q=dry+land&source=lnms&tbm=isch&sa=X&ei=2oO_VPnQOKnX7Qa5poHYAw&ved=0CAgQ_AUoAQ&biw=946&bih=920#imgdii=_&imgrc=IV0TULe07HpowM%253A%3BpIzBR3Lss-SlwM%3Bhttp%253A%252F%252Fwww.highqualitywallpapers.eu%252Fwp-content%252Fuploads%252F2013%252F01%252FDryland-HD.jpg%3Bhttp%253A%252F%252Fwww.highqualitywallpapers.eu%252Fdesert-wallpapers%252Fdryland-hd%252F%3B1920%3B1080
+
+
+EXTENSIONS:
+- Reflection
+- Shadows - dynamic
+- Shadows - shadow map
+- Antialiasing
+- Hardware GPU implementation
+- Profiling analysis
+- A/B testing (using profiling) of a specific technique
+- Self-illumination? (electricity, sun)
+- Ray tracing implementation
+- Procedural texture for the floor
+- 3D sound
+- Mipmapping
+- Particle system (rain)
+- PS4 / Xbox One support
+- Multithreading: parallelise the software renderer
+- SIMD
+- Optimisation: Software prefetching?
+- Analysis of limitations / artifacts of the renderer
+- Switch between buffers: color buffer, Z-buffer
