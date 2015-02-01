@@ -8,8 +8,8 @@
 
 struct VertexData
 {
-	vec4 m_pos;
-	uint8_t m_color[4];
+    vec4 m_pos;
+    uint8_t m_color[4];
 };
 
 POW2_STATIC_ASSERT(sizeof(VertexData) == 20);  // size of VertexData is performance-sensitive
