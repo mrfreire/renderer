@@ -26,6 +26,23 @@ static const ScanConversionMode g_scanConversionMode = ScanConversionMode::First
 // DATA STRUCTURES
 //
 
+struct TriangleData
+{
+    vec3 m_normal;
+    vec3 m_interpNormals[3];
+    float m_minX;
+    float m_maxX;
+    float m_minY;
+    float m_maxY;
+};
+
+struct ScanData
+{
+    FragmentInput* m_fragmentsIn;
+    int m_capacity;
+    int m_fragmentsCount;
+};
+
 struct Plane
 {
     vec3 n;
@@ -33,19 +50,33 @@ struct Plane
 };
 
 //
-// INTERNAL FUNCTIONS
+// HELPER FUNCTIONS
 //
 
-static inline uint32_t CalcBufferColor(const uint8_t c[4])
+static inline uint32_t ColorToBufferColor(const vec4 c)
 {
-    return (c[0] << 16) + (c[1] << 8) + c[2];
+    return 
+        ((uint8_t)(c.x * 255) << 16) +
+        ((uint8_t)(c.y * 255) << 8) +
+        (uint8_t)(c.z * 255) +
+        ((uint8_t)(c.w * 255) << 24);
+}
+
+static inline vec4 BufferColorToColor(const uint32_t c)
+{
+    vec4 ret;
+    ret.x = (c >> 16 & 0xff) / 255.0f;
+    ret.y = (c >> 8 & 0xff) / 255.0f;
+    ret.z = (c & 0xff) / 255.0f;
+    ret.w = (c >> 24 & 0xff) / 255.0f;
+    return ret;
 }
 
 //
-// PUBLIC FUNCTIONS
+// PIPELINE FUNCTIONS
 //
 
-void RasterizerUtils::TriangleSetup(TriangleData* triangle, const TriangleInput& input)
+static void TriangleSetup(TriangleData* triangle, const TriangleInput& input)
 {
     // TODO(manuel): check CW / CCW
 
@@ -93,7 +124,7 @@ void RasterizerUtils::TriangleSetup(TriangleData* triangle, const TriangleInput&
         vertices[2].y);
 }
 
-void RasterizerUtils::TriangleTraversal(
+static void TriangleTraversal(
     ScanData* scan,
     FragmentInput* fragmentsTmpBuffer,
     const TriangleInput& input,
@@ -140,7 +171,7 @@ void RasterizerUtils::TriangleTraversal(
     }
 }
 
-void RasterizerUtils::TriangleShading(
+static void TriangleShading(
     RasterBuffers* buffers,
     const TriangleInput& input,
     const ScanData& scan)
@@ -149,25 +180,48 @@ void RasterizerUtils::TriangleShading(
     {
         const FragmentInput& fragIn = scan.m_fragmentsIn[i];
 
-        uint8_t color[4] = {};
+        // Calculate colour
+        vec4 baseColor = vec4(0, 0, 0, 0);
+        vec2 textureCoord = vec2(0, 0);
         for (int v = 0; v < 3; ++v)
         {
             const VertexData& vertex = input.m_vertexArray[input.m_indices[v]];
 
             float value = fragIn.m_interpValues[v];
-            color[0] += vertex.m_color[0] * value;
-            color[1] += vertex.m_color[1] * value;
-            color[2] += vertex.m_color[2] * value;
-            color[3] += vertex.m_color[3] * value;
-        }
 
-        buffers->m_color[fragIn.m_y * buffers->m_width + fragIn.m_x] = CalcBufferColor(color);
+            baseColor = baseColor + (vertex.m_color * value);
+            
+            textureCoord.x += vertex.m_textureCoord.x * value;
+            textureCoord.y += vertex.m_textureCoord.y * value;
+        }
+        
+        textureCoord.x = fmaxf(textureCoord.x, 0);
+        textureCoord.x = fminf(textureCoord.x, 1);
+        textureCoord.y = fmaxf(textureCoord.y, 0);
+        textureCoord.y = fminf(textureCoord.y, 1);
+        
+        // Texturing (clamp)
+        int texturePoint[2];
+        texturePoint[0] = (int)(textureCoord.x * input.m_texture.m_width);
+        texturePoint[1] = (int)(textureCoord.y * input.m_texture.m_height);
+        vec4 textureColor = BufferColorToColor(
+            input.m_texture.m_data[texturePoint[1] * input.m_texture.m_width + texturePoint[0]]);
+        
+        // Produce fragment
+        vec4 outColor = baseColor * textureColor;
+        buffers->m_color[fragIn.m_y * buffers->m_width + fragIn.m_x] = ColorToBufferColor(outColor);
     }
 }
+
+//
+// EXTERNAL FUNCTIONS
+//
 
 void Rasterizer::RasterTriangle(RasterBuffers* buffers, const TriangleInput& input)
 {
     POW2_ASSERT(buffers);
+
+    POW2_ASSERT(ColorToBufferColor(BufferColorToColor(0xafbfcfdf)) == 0xafbfcfdf);
 
     TriangleData triangleData;
     ScanData scanData;
@@ -179,22 +233,21 @@ void Rasterizer::RasterTriangle(RasterBuffers* buffers, const TriangleInput& inp
     DebugTimer_Tic("TriangleSetup");
 #endif
 
-    RasterizerUtils::TriangleSetup(&triangleData, input);
+    TriangleSetup(&triangleData, input);
     
 #if PROFILE
     profileSetupTimeMs = DebugTimer_Toc("TriangleSetup");
     DebugTimer_Tic("TriangleTraversal");
 #endif
     
-    RasterizerUtils::TriangleTraversal(
-        &scanData, buffers->m_fragmentsTmpBuffer, input, triangleData);
+    TriangleTraversal(&scanData, buffers->m_fragmentsTmpBuffer, input, triangleData);
 
 #if PROFILE
     profileTraversalTimeMs = DebugTimer_Toc("TriangleTraversal");
     DebugTimer_Tic("TriangleShading");
 #endif
     
-    RasterizerUtils::TriangleShading(buffers, input, scanData);
+    TriangleShading(buffers, input, scanData);
     
 #if PROFILE
     profileShadingTimeMs = DebugTimer_Toc("TriangleShading");

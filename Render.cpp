@@ -19,8 +19,42 @@ struct RenderState
     RenderMode m_mode;
 };
 
-void Render(RasterBuffers* buffers)
+// TODO(manuel): Temporary hack
+static const int g_textureSize = 16;
+static uint32_t g_texture[g_textureSize][g_textureSize];
+static bool g_initialised = false;
+
+void InitTexture()
 {
+    // Init test texture
+    const uint32_t black = 0x00000000;
+    const uint32_t white = 0xffffffff;
+    for (int i = 0; i < g_textureSize; ++i)
+    {
+        bool evenRow = (i % 2 == 0);
+        for (int j = 0; j < g_textureSize; ++j)
+        {
+            bool evenCol = (j % 2 == 0);
+            if (evenRow)
+            {
+                g_texture[i][j] = evenCol ? white : black;
+            }
+            else
+            {
+                g_texture[i][j] = evenCol ? black : white;
+            }
+        }
+    }
+}
+
+void Render(RasterBuffers* buffers)
+{   
+    if (!g_initialised)  // TODO(manuel): Temporary hack
+    {
+        g_initialised = true;
+        InitTexture();
+    }
+
     DebugTimer_Tic(__FUNCTION__);
 
     //
@@ -38,11 +72,16 @@ void Render(RasterBuffers* buffers)
     // Setup geometry (in window coordinates already)
     //
 
-    const float verticesViewport[][3] = {
+    /*const float verticesViewport[][3] = {
         { 0.0f, 0.8f, -1.0f },
         { 0.8f, -0.8f, 0.0f },
-        { -0.8f, -0.8f, 0.0f } };
-
+        { -0.8f, -0.8f, 0.0f } };*/
+    const float verticesViewport[][6] = {
+        { -0.6f, 0.8f, 0.0f },
+        { 0.6f, -0.8f, 0.0f },
+        { -0.6f, -0.8f, 0.0f },
+        { 0.6f, 0.8f, 0.0f } };
+    
     const float wD2 = (float)buffers->m_width / 2;
     const float hD2 = (float)buffers->m_height / 2;
 
@@ -59,12 +98,14 @@ void Render(RasterBuffers* buffers)
     ++frame;
 
     const VertexData vertexData[] = {
-        { vertices[0], { 0, 255, 0, 255 } },
-        { vertices[1], { 0, 0, 255, 255 } },
-        { vertices[2], { 255, 0, 0, 255 } } };
+        { vertices[0], { 0, 1, 0, 1 }, { 0.0f, 0.0f } },
+        { vertices[1], { 0, 0, 1, 1 }, { 1.0f, 1.0f } },
+        { vertices[2], { 1, 0, 0, 1 }, { 0.0f, 1.0f } },
+        { vertices[3], { 1, 0, 0, 1 }, { 1.0f, 0.0f } } };
 
     const int triangles[] = {
-        0, 1, 2
+        0, 1, 2,
+        0, 3, 1,
     };
 
     POW2_ASSERT(SizeOfArray(triangles) % 3 == 0);
@@ -77,6 +118,7 @@ void Render(RasterBuffers* buffers)
     {
         TriangleInput input = {
             vertexData, 
+            { g_textureSize, g_textureSize, (uint32_t*)g_texture },
             { triangles[i], triangles[i + 1], triangles[i + 2] } };
 
         Rasterizer::RasterTriangle(buffers, input);

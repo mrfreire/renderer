@@ -9,7 +9,8 @@
 struct VertexData
 {
     vec4 m_pos;  // window coordinates
-    uint8_t m_color[4];
+    vec4 m_color;
+    vec2 m_textureCoord;
 };
 
-POW2_STATIC_ASSERT(sizeof(VertexData) == 20);  // size of VertexData is performance-sensitive
+POW2_STATIC_ASSERT(sizeof(VertexData) == 40);  // size of VertexData is performance-sensitive

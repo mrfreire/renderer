@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry.h"
+#include "MathUtils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -10,20 +11,18 @@
 // RASTERIZER OUTPUT: buffers
 //
 
-struct TriangleInput
+struct TextureData
 {
-    const VertexData* const m_vertexArray;
-    const int m_indices[3];  // Clockwise
+    int m_width;
+    int m_height;
+    uint32_t* m_data;
 };
 
-struct TriangleData
+struct TriangleInput
 {
-    vec3 m_normal;
-    vec3 m_interpNormals[3];
-    float m_minX;
-    float m_maxX;
-    float m_minY;
-    float m_maxY;
+    const VertexData* m_vertexArray;
+    TextureData m_texture;
+    int m_indices[3];  // Clockwise
 };
 
 struct FragmentInput
@@ -32,13 +31,6 @@ struct FragmentInput
     int m_y;
     // TODO(manuel): z
     float m_interpValues[3];
-};
-
-struct ScanData
-{
-    FragmentInput* m_fragmentsIn;
-    int m_capacity;
-    int m_fragmentsCount;
 };
 
 struct RasterBuffers
@@ -56,17 +48,4 @@ struct RasterBuffers
 namespace Rasterizer
 {
     void RasterTriangle(RasterBuffers* buffers, const TriangleInput& input);
-}
-
-namespace RasterizerUtils
-{
-    void TriangleSetup(TriangleData* triangle, const TriangleInput& input);
-
-    void TriangleTraversal(
-        ScanData* scan,
-        FragmentInput* fragmentsTmpBuffer,
-        const TriangleInput& input,
-        const TriangleData& triangle);
-    
-    void TriangleShading(RasterBuffers* buffers, const TriangleInput& input, const ScanData& scan);
 }

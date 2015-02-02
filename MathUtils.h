@@ -1,6 +1,24 @@
 #pragma once
 
 //
+// vec2
+//
+
+struct vec2
+{
+    float x;
+    float y;
+    
+    vec2()
+    {}
+
+    vec2(float x_, float y_)
+        : x(x_)
+        , y(y_)
+    {}
+};
+
+//
 // vec3
 //
 
@@ -58,6 +76,9 @@ struct vec4
 };
 
 vec3 vec4xyz(const vec4& a);
+vec4 operator+(const vec4& a, const vec4& b);
+vec4 operator*(const vec4& a, const vec4& b);
+vec4 operator*(const vec4& a, float s);
 
 //
 // Inline functions
@@ -130,4 +151,31 @@ inline vec3 vec3Cross(const vec3& a, const vec3& b)
 inline vec3 vec4xyz(const vec4& a)
 {
     return vec3(a.x, a.y, a.z);
+}
+
+inline vec4 operator+(const vec4& a, const vec4& b)
+{
+    return vec4(
+        a.x + b.x,
+        a.y + b.y,
+        a.z + b.z,
+        a.w + b.w);
+}
+
+inline vec4 operator*(const vec4& a, const vec4& b)
+{
+    return vec4(
+        a.x * b.x,
+        a.y * b.y,
+        a.z * b.z,
+        a.w * b.w);
+}
+
+inline vec4 operator*(const vec4& a, float s)
+{
+    return vec4(
+        a.x * s,
+        a.y * s,
+        a.z * s,
+        a.w * s);
 }
